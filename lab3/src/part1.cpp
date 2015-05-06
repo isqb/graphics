@@ -193,12 +193,37 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
     // Construct the ModelViewProjection, ModelView, and normal
     // matrices here and pass them as uniform variables to the shader
     // program
+	view = glm::lookAt(glm::vec3(0.0f,0.01f,5.0f),glm::vec3(0),glm::vec3(0.0f,1.0f,0.0f));
+
+	projection = glm::perspective(45.0f, 1.0f, 0.1f, 100.0f);
+
+	glm::mat4 trackMatrix = globals.trackball.getRotationMatrix();
+
+	model = trackMatrix;
+
+	glm::mat4 MVPmatrix = projection * view * model;
+	glm::mat4 u_mv = view * model;
+	globals.program.setUniformMatrix4f("MVPmatrix", glm::mat4(MVPmatrix));
+	globals.program.setUniformMatrix4f("u_mv", u_mv);
     
 
     // Set up the light source and material properties and pass them
     // as uniform variables to the shader program, along with the
     // flags (uniform int variables) used for toggling on/off
     // different parts of the rendering
+	glm::vec3 light_position = glm::vec3(0.0, 5.0, 10.0);
+	glm::vec3 light_color = glm::vec3(1.0, 1.0, 1.0);
+	glm::vec3 ambient_color = glm::vec3(1.0, 1.0, 1.0);
+	glm::vec3 diffuse_color = glm::vec3(0.0, 1.0, 0.0);
+	glm::vec3 specular_color = glm::vec3(1.0, 1.0, 1.0);
+	
+
+	globals.program.setUniform3f("light_position",light_position);
+	globals.program.setUniform3f("light_color",light_color);
+	globals.program.setUniform3f("ambient_color",ambient_color);
+	globals.program.setUniform3f("diffuse_color",diffuse_color);
+	globals.program.setUniform3f("specular_color",specular_color);
+	globals.program.setUniform1f("specular_power",60.0);
 
 
     glBindVertexArray(meshVAO.vao);
