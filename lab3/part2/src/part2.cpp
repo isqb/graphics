@@ -57,8 +57,10 @@ struct Globals {
     int width;
     int height;
     cgtk::GLSLProgram program;
+	cgtk::GLSLProgram program_sky_box;
     cgtk::Trackball trackball;
     Mesh mesh;
+	
     MeshVAO meshVAO;
     GLuint cubemap_0;
 	GLuint cubemap_1;
@@ -68,6 +70,7 @@ struct Globals {
 	GLuint cubemap_5;
 	GLuint cubemap_6;
 	GLuint cubemap_7;
+	GLuint cubemap_sky_box;
 	glm::vec3 light_position;
 	glm::vec3 light_color;
 	glm::vec3 ambient_color;
@@ -326,19 +329,27 @@ void init(void)
 	std::string texture_array[] = {"0.125", "0.5", "2", "8", "32", "128", "512", "2048"};
 	globals.textures = std::vector<std::string>(texture_array,end(texture_array));
 
-	globals.cubemap_0 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[0]);
-	globals.cubemap_1 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[1]);
-	globals.cubemap_2 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[2]);
-	globals.cubemap_3 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[3]);
-	globals.cubemap_4 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[4]);
-	globals.cubemap_5 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[5]);
-	globals.cubemap_6 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[6]);
-    globals.cubemap_7 = loadCubeMap(cubemapDir() + "reference/prefiltered/"+globals.textures[7]);
+	globals.cubemap_0 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[0]);
+	globals.cubemap_1 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[1]);
+	globals.cubemap_2 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[2]);
+	globals.cubemap_3 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[3]);
+	globals.cubemap_4 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[4]);
+	globals.cubemap_5 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[5]);
+	globals.cubemap_6 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[6]);
+    globals.cubemap_7 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/"+globals.textures[7]);
+	globals.cubemap_sky_box = loadCubeMap(cubemapDir() + "RomeChurch");
+	std::string dir = shaderDir();
 
     loadProgram(shaderDir() + "environment_mapping.vert",
                 shaderDir() + "environment_mapping.frag",
                 &globals.program);
+	
+	loadProgram(shaderDir() + "skybox.vert",
+				shaderDir() + "skybox.frag",
+				&globals.program_sky_box);
 		
+	
+
     loadMesh((modelDir() + "gargo.obj"), &globals.mesh);
     createMeshVAO(globals.mesh, &globals.meshVAO);
 
@@ -395,62 +406,169 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 
     // Select the active texture unit and bind the cubemap texture
 	
-	
-	
     // Pass the number of the active texture unit as a uniform int
     // variable to the shader program
 
+	// bind mesh and draw
 	if (globals.newText != globals.oldText){
-		if(globals.newText == 8) {
+		switch (globals.newText){
+			
+		case 8:
 			glActiveTexture(GL_TEXTURE8);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_7);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_7);
-		}
-		if(globals.newText == 7) {
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_7);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_7);
+			break;
+
+		case 7:
 			glActiveTexture(GL_TEXTURE7);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_6);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_6);
-		}
-		if(globals.newText == 6) {
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_6);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_6);
+			break;
+
+		case 6:
 			glActiveTexture(GL_TEXTURE6);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_5);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_5);
-		}
-		if(globals.newText == 5) {
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_5);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_5);
+			break;
+
+		case 5:
 			glActiveTexture(GL_TEXTURE5);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_4);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_4);
-		}
-		if(globals.newText == 4) {
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_4);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_4);
+			break;
+
+		case 4:
 			glActiveTexture(GL_TEXTURE4);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_3);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_3);
-		}
-		if(globals.newText == 3) {
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_3);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_3);
+			break;
+
+		case 3:
 			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_2);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_2);
-		}
-		if(globals.newText == 2) {
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_2);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_2);
+			break;
+		case 2:
 			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_1);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_1);
-		}
-		if(globals.newText == 1) {
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_1);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_1);
+			break;
+			/* Using TEXTURE1 for sky box
+		case 1:
 			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_CUBE_MAP,globals.cubemap_0);
-			globals.program.setUniform1i("u_cubemap",globals.cubemap_0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_0);
+			globals.program.setUniform1i("u_cubemap", globals.cubemap_0);
+			break;*/
+
+		default:
+			break;
 		}
 		globals.oldText = globals.newText;
 	}
+	glBindVertexArray(meshVAO.vao);
+	glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
 
-    glBindVertexArray(meshVAO.vao);
-    glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
+    
+	// Background Colour
 	glClearColor(globals.bg_color[0],globals.bg_color[1],globals.bg_color[2], 1.0);
 	
 
-    program.disable();
+    
+	program.disable();
+}
+
+void drawSkyBox(cgtk::GLSLProgram &program){
+
+	// Bind Skybox and Draw
+	program.enable(); // glUseProgram()
+
+
+	// Create Skybox
+	float size = 10.0;
+	float points[] = {
+		-size, size, -size,
+		-size, -size, -size,
+		size, -size, -size,
+		size, -size, -size,
+		size, size, -size,
+		-size, size, -size,
+
+		-size, -size, size,
+		-size, -size, -size,
+		-size, size, -size,
+		-size, size, -size,
+		-size, size, size,
+		-size, -size, size,
+
+		size, -size, -size,
+		size, -size, size,
+		size, size, size,
+		size, size, size,
+		size, size, -size,
+		size, -size, -size,
+
+		-size, -size, size,
+		-size, size, size,
+		size, size, size,
+		size, size, size,
+		size, -size, size,
+		-size, -size, size,
+
+		-size, size, -size,
+		size, size, -size,
+		size, size, size,
+		size, size, size,
+		-size, size, size,
+		-size, size, -size,
+
+		-size, -size, -size,
+		-size, -size, size,
+		size, -size, -size,
+		size, -size, -size,
+		-size, -size, size,
+		size, -size, size
+	};
+
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, 3 * 36 * sizeof(float), &points, GL_STATIC_DRAW);
+
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindVertexArray(0);
+
+	// Pass uniforms ///////////// 
+
+		// Define the model, view, and projection matrices
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+
+		view = glm::lookAt(glm::vec3(0.0f, 0.01f, 5.0f), glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		glm::mat4 trackMatrix = globals.trackball.getRotationMatrix();
+
+		model = trackMatrix;
+
+		glm::mat4 MVPmatrix = projection * view * model;
+		glm::mat4 u_mv = view * model;
+		program.setUniformMatrix4f("MVPmatrix", glm::mat4(MVPmatrix));
+		program.setUniform1i("u_cubemap", globals.cubemap_sky_box);
+		//globals.program.setUniformMatrix4f("u_mv", u_mv);
+
+	//////////////////////////////
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_sky_box);
+	globals.program.setUniform1i("u_cubemap", globals.cubemap_sky_box);
+
+	program.disable();
+
 }
 
 void display(void)
@@ -458,7 +576,10 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_DEPTH_TEST);
-    drawMesh(globals.program, globals.meshVAO);
+    //drawMesh(globals.program, globals.meshVAO);
+	glDepthMask(GL_FALSE);
+	drawSkyBox(globals.program_sky_box);
+	glDepthMask(GL_TRUE);
 	TwDraw();  // draw the tweak bar(s)
     glutSwapBuffers();
 }
@@ -510,10 +631,10 @@ void mouseButtonPressed(int button, int x, int y)
         globals.trackball.startTracking(glm::vec2(x, y));
     }
 	if(button == 3) {
-		globals.zoomFactor+=0.1f;
+		globals.zoomFactor-=0.1f;
 	}
 	if(button ==4) {
-		globals.zoomFactor-=0.1f;
+		globals.zoomFactor+=0.1f;
 	}
 }
 
