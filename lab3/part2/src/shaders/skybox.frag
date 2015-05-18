@@ -4,6 +4,8 @@
 //uniform mat4 u_projection;
 //uniform mat4 u_view;
 uniform samplerCube u_cubemap;
+//uniform mat4 u_mv
+
 
 in vec3 TexCoords;
 

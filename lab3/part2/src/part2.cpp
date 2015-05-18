@@ -64,6 +64,7 @@ struct Globals {
     MeshVAO meshVAO;
 	GLuint skyboxVAO;
 	GLuint skyboxVBO;
+	GLuint skyboxEBO;
     GLuint cubemap_0;
 	GLuint cubemap_1;
 	GLuint cubemap_2;
@@ -281,60 +282,64 @@ void loadMesh(const std::string &filename, Mesh *mesh)
 
 void createBoxVAO(){
 
-
-#pragma region create_skybox
 	// Create Skybox
-	float size = 1.0f;
+	float size = 100.0f;
 	
 	GLfloat points[] = {
-		-size, size, -size,
-		-size, -size, -size,
-		size, -size, -size,
-		size, -size, -size,
-		size, size, -size,
-		-size, size, -size,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
 
-		-size, -size, size,
-		-size, -size, -size,
-		-size, size, -size,
-		-size, size, -size,
-		-size, size, size,
-		-size, -size, size,
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
 
-		size, -size, -size,
-		size, -size, size,
-		size, size, size,
-		size, size, size,
-		size, size, -size,
-		size, -size, -size,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
 
-		-size, -size, size,
-		-size, size, size,
-		size, size, size,
-		size, size, size,
-		size, -size, size,
-		-size, -size, size,
+		-1.0f, -1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f,
+		-1.0f, -1.0f, 1.0f,
 
-		-size, size, -size,
-		size, size, -size,
-		size, size, size,
-		size, size, size,
-		-size, size, size,
-		-size, size, -size,
+		-1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f,
 
-		-size, -size, -size,
-		-size, -size, size,
-		size, -size, -size,
-		size, -size, -size,
-		-size, -size, size,
-		size, -size, size
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f
 	};
-#pragma endregion
-
 
 	glGenBuffers(1, &globals.skyboxVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, globals.skyboxVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
+
+	/* idk
+	// Generates and populates a VBO for the element indices
+	glGenBuffers(1, &(globals.skyboxEBO));
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, globals.skyboxEBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(points), mesh.indices.data(), GL_STATIC_DRAW);
+	*/
+
 
 	
 	glGenVertexArrays(1, &globals.skyboxVAO);
@@ -548,51 +553,79 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 
     
 	program.disable();
+	/**/
+#pragma region Draw sky box in DrawMesh
+	globals.program_sky_box.enable();
+	/**/
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_sky_box);
+
+	globals.program_sky_box.setUniformMatrix4f("u_projection", glm::mat4(projection));
+	globals.program_sky_box.setUniformMatrix4f("u_view", glm::mat4(view));
+	globals.program_sky_box.setUniform1i("u_cubemap", globals.cubemap_sky_box);
+	globals.program_sky_box.setUniformMatrix4f("u_mvp", glm::mat4(MVPmatrix));
+
+	glBindVertexArray(globals.skyboxVAO);
+	//glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+	glDrawArrays(GL_TRIANGLES, 0, 108);
+	glBindVertexArray(0);
+
+	globals.program_sky_box.disable();
+#pragma endregion
 }
 
 void drawSkyBox(cgtk::GLSLProgram &program){
 
 	glDepthMask(GL_FALSE);
 	
-	// Bind Skybox and Draw
+	// Bind Skybox and DrawCa
 	program.enable(); // glUseProgram()
 
 	// Pass uniforms ///////////// 
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 projection = glm::mat4(1.0f);
-		projection = projection = glm::perspective(globals.zoomFactor*45.0f, 
-														1.0f, 0.1f, 100.0f);
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 trackMatrix = globals.trackball.getRotationMatrix();
+	model = trackMatrix;
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4 projection = glm::mat4(1.0f);
+	projection = projection = glm::perspective(globals.zoomFactor*45.0f,
+		1.0f, 0.1f, 100.0f);
 
-		view = glm::lookAt(glm::vec3(0.0f, 0.01f, 5.0f), glm::vec3(0),
-											glm::vec3(0.0f, 1.0f, 0.0f));
+	view = glm::lookAt(glm::vec3(0.0f, 0.01f, 5.0f), glm::vec3(0),
+		glm::vec3(0.0f, 1.0f, 0.0f));
 
-		program.setUniformMatrix4f("u_projection", glm::mat4(projection));
-		program.setUniformMatrix4f("u_view", glm::mat4(view));
-		program.setUniform1i("u_cubemap", globals.cubemap_sky_box);
-		
+	glm::mat4 MVPmatrix = projection * view * model;
+	glm::mat4 u_mv = view * model;
+
+	program.setUniformMatrix4f("u_projection", glm::mat4(projection));
+	program.setUniformMatrix4f("u_view", glm::mat4(view));
+	program.setUniform1i("u_cubemap", globals.cubemap_sky_box);
+
+	program.setUniformMatrix4f("u_mvp", glm::mat4(MVPmatrix));
+
 	//////////////////////////////
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_sky_box);
 
 	glBindVertexArray(globals.skyboxVAO);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0); // not sure about 36
+	//glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0); // not sure about 36
+	glDrawArrays(GL_TRIANGLES, 0, 108);
 	glBindVertexArray(0);
 
-	
+
 	program.disable();
 	glDepthMask(GL_TRUE);
 }
 
 void display(void)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glEnable(GL_DEPTH_TEST);
-	drawSkyBox(globals.program_sky_box);
-    //drawMesh(globals.program, globals.meshVAO);
+	glEnable(GL_DEPTH_TEST);
+	//drawSkyBox(globals.program_sky_box);
+	drawMesh(globals.program, globals.meshVAO);
 	TwDraw();  // draw the tweak bar(s)
-    glutSwapBuffers();
+	glutSwapBuffers();
 }
 
 void idle(void)
