@@ -43,5 +43,16 @@ void main() {
 	// surface and send the resulting color to the fragment shader
     //v_color = diffuse * vec3(0.0, 1.0, 0.0);
 
-	gl_Position = MVPmatrix*a_position;
+	float dotVN = dot(V,N);
+	vec3 normal = vec3(a_normal);
+	vec3 newpos;
+	/**/
+
+	if(dotVN < 0){
+		newpos = 0.03 * N + a_position.xyz;
+		gl_Position = MVPmatrix * vec4(newpos,1.0);
+		//N = normalize(mat3(u_mv) * newpos);
+	}
+	else
+		gl_Position = MVPmatrix*a_position;
 }

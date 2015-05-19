@@ -62,12 +62,17 @@ void main() {
 	else
 		color = 0.1 * color;
 	
-	
 	float border = dot(V,N);
-	if(border < 0.25){
+
+	if (border < 0){
 		color = vec3(0.0,0.0,0.0);
 	}
 
+	/*
+	if(border < 0.25){
+		
+	}
+	*/
 	gl_FragColor = vec4(color, 1.0);
     //FragColor = vec4(output_color, 1.0);
 

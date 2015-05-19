@@ -269,13 +269,13 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	globals.program.setUniform1i("invert_switch",globals.invert_switch);
 	globals.program.setUniform1i("normals_switch",globals.normals_switch);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glBindVertexArray(meshVAO.vao);
     glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 
 	/* Draw second object, all black, slight larger in direction of normals
