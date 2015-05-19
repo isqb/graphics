@@ -86,10 +86,10 @@ struct Globals {
 		zoomFactor = 1.0f;
 		light_position = glm::vec3(0.0f, 5.0f, -5.0f);
 		light_color = glm::vec3(1.0f, 1.0f, 1.0f);
-		ambient_color = glm::vec3(0.002f, 0.002f, 0.002f);
+		ambient_color = glm::vec3(0.0f, 10.0f, 0.0f);
 		diffuse_color = glm::vec3(0.0f, 1.0f, 0.0f);
 		specular_color = glm::vec3(1.0f, 1.0f, 1.0f);
-		bg_color = glm::vec3(0.0, 0.0, 0.0);
+		bg_color = glm::vec3(255.0, 0.0, 0.0);
     }
 
 };
@@ -210,7 +210,7 @@ void init(void)
                 shaderDir() + "mesh.frag",
                 &globals.program);
 
-    loadMesh((modelDir() + "teapot.obj"), &globals.mesh);
+    loadMesh((modelDir() + "gargo.obj"), &globals.mesh);
     createMeshVAO(globals.mesh, &globals.meshVAO);
 
     initializeTrackball();
@@ -260,7 +260,7 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	globals.program.setUniform3f("ambient_color",globals.ambient_color);
 	globals.program.setUniform3f("diffuse_color",globals.diffuse_color);
 	globals.program.setUniform3f("specular_color",globals.specular_color);
-	globals.program.setUniform1f("specular_power",420.0);
+	globals.program.setUniform1f("specular_power",40.0);
 
 	globals.program.setUniform1i("ambient_switch",globals.ambient_switch);
 	globals.program.setUniform1i("diffuse_switch",globals.diffuse_switch);
@@ -269,10 +269,23 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	globals.program.setUniform1i("invert_switch",globals.invert_switch);
 	globals.program.setUniform1i("normals_switch",globals.normals_switch);
 
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glBindVertexArray(meshVAO.vao);
     glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+
+	/* Draw second object, all black, slight larger in direction of normals
+	globals.program_outline.enable()
+	glBindVertexArray(meshVAO.vao);
+	glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	globals.program_outline.disable()
+	*/
+
 	glClearColor(globals.bg_color[0],globals.bg_color[1],globals.bg_color[2], 1.0);
 
     program.disable();
@@ -436,7 +449,7 @@ int main(int argc, char** argv)
 	TwInit(TW_OPENGL_CORE, NULL);
 	TwBar *myBar;
 	myBar = TwNewBar("AwesomeTweak2k");
-	TwAddVarRW(myBar, "AmbientColor", TW_TYPE_COLOR3F, &globals.ambient_color[0], "colormode=rgb group='ambient'");
+	TwAddVarRW(myBar, "AmbientColor", TW_TYPE_COLOR3F, &globals.ambient_color[0], "colormode=hls group='ambient'");
 	TwAddVarRW(myBar, "AmbientColor_switch", TW_TYPE_BOOL32, &globals.ambient_switch, "label= 'Ambient on/off' group='ambient'");
 	TwAddVarRW(myBar, "DiffuseColor", TW_TYPE_COLOR3F, &globals.diffuse_color[0], "colormode=rgb group='diffuse'");
 	TwAddVarRW(myBar, "DiffuseColor_switch", TW_TYPE_BOOL32, &globals.diffuse_switch,"label= 'Diffuse on/off' group='diffuse'");
