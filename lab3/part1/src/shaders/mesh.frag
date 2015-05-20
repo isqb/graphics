@@ -13,6 +13,7 @@ uniform int specular_switch;
 uniform int gamma_swtich;
 uniform int invert_switch;
 uniform int normals_switch;
+//uniform vec3 u_intensity_bounds;
 
 in vec3 L;
 in vec3 V;
@@ -53,14 +54,14 @@ void main() {
 	
 	//vec3 color = vec3(1.0,0.5,0.5);
 	vec3 color = output_color;
-	if (intensity > 0.95)
+	if (intensity > intensity_bounds.x)		// Upper Bound	
 		color = color;
-	else if (intensity > 0.5)
+	else if (intensity > intesity_bounds.y)	// Middle Bound	
+		color = 0.75 * color;
+	else if (intensity > intensity_bounds.z)	// Lower Bound
 		color = 0.5 * color;
-	else if (intensity > 0.25)
-		color = 0.25 * color;
 	else
-		color = 0.1 * color;
+		color = 0.26 * color;
 	
 	float border = dot(V,N);
 

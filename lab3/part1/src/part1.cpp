@@ -58,6 +58,7 @@ struct Globals {
 	glm::vec3 diffuse_color;
 	glm::vec3 specular_color; 
 	glm::vec3 bg_color;
+	glm::vec3 intensity_bounds;
 
 	int ambient_switch;
 	int diffuse_switch;
@@ -90,6 +91,7 @@ struct Globals {
 		diffuse_color = glm::vec3(0.0f, 1.0f, 0.0f);
 		specular_color = glm::vec3(1.0f, 1.0f, 1.0f);
 		bg_color = glm::vec3(255.0, 0.0, 0.0);
+		intensity_bounds = glm::vec3(0.95, 0.75, 0.5);
     }
 
 };
@@ -255,19 +257,20 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	
 	
 
-	globals.program.setUniform3f("light_position",globals.light_position);
-	globals.program.setUniform3f("light_color",globals.light_color);
-	globals.program.setUniform3f("ambient_color",globals.ambient_color);
-	globals.program.setUniform3f("diffuse_color",globals.diffuse_color);
-	globals.program.setUniform3f("specular_color",globals.specular_color);
-	globals.program.setUniform1f("specular_power",40.0);
+	program.setUniform3f("light_position",globals.light_position);
+	program.setUniform3f("light_color",globals.light_color);
+	program.setUniform3f("ambient_color",globals.ambient_color);
+	program.setUniform3f("diffuse_color",globals.diffuse_color);
+	program.setUniform3f("specular_color",globals.specular_color);
+	program.setUniform1f("specular_power",40.0);
+	program.setUniform3f("u_intensity_bounds", globals.intensity_bounds);
 
-	globals.program.setUniform1i("ambient_switch",globals.ambient_switch);
-	globals.program.setUniform1i("diffuse_switch",globals.diffuse_switch);
-	globals.program.setUniform1i("specular_switch",globals.specular_switch);
-	globals.program.setUniform1i("gamma_swtich",globals.gamma_swtich);
-	globals.program.setUniform1i("invert_switch",globals.invert_switch);
-	globals.program.setUniform1i("normals_switch",globals.normals_switch);
+	program.setUniform1i("ambient_switch",globals.ambient_switch);
+	program.setUniform1i("diffuse_switch",globals.diffuse_switch);
+	program.setUniform1i("specular_switch",globals.specular_switch);
+	program.setUniform1i("gamma_swtich",globals.gamma_swtich);
+	program.setUniform1i("invert_switch",globals.invert_switch);
+	program.setUniform1i("normals_switch",globals.normals_switch);
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -463,6 +466,7 @@ int main(int argc, char** argv)
 	TwAddVarRW(myBar, "GammaCorrection_switch", TW_TYPE_BOOL32, &globals.gamma_swtich,"label= 'Gamma on/off'");
 	TwAddVarRW(myBar, "InvertNormals_switch", TW_TYPE_BOOL32, &globals.invert_switch,"label= 'Invert on/off'");
 	TwAddVarRW(myBar, "Ortho toggle", TW_TYPE_BOOL32, &globals.ortho_switch,"");
+	TwAddVarRW(myBar, "Intesity Bounds", TW_TYPE_DIR3F, &globals.intensity_bounds, "group='Cel Shading'");
     glutDisplayFunc(&display);
     glutIdleFunc(&idle);
     glutKeyboardFunc(&keyboard);
