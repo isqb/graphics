@@ -16,6 +16,8 @@ uniform vec3 diffuse_color;
 uniform vec3 specular_color;
 uniform float specular_power;
 
+uniform int border_switch;
+
 out vec3 L;
 out vec3 N;
 out vec3 V;
@@ -34,7 +36,7 @@ void main() {
 	
 	// Calculate the view-space light direction
 	//vec3 light_position = vec3(0.0, 0.0, 5.0);
-	L = normalize(light_position - position_eye);
+	L = normalize(light_position - position_eye); // 
 
 	// Calculate the view-vector 
 	V = normalize(-position_eye);
@@ -44,17 +46,14 @@ void main() {
     //v_color = diffuse * vec3(0.0, 1.0, 0.0);
 
 	float dotVN = dot(V,N);
-	vec3 normal = vec3(a_normal);
 	vec3 newpos;
 
-	/*
-	if(dotVN < 0){
-		newpos = 0.03 * N + a_position.xyz;
-		gl_Position = MVPmatrix * vec4(newpos,1.0);
-		//N = normalize(mat3(u_mv) * newpos);
+/*
+	if (border_switch == 1){
+		//gl_Position = MVPmatrix * (a_position + (0.05 * vec4(N,1.0)));
+		gl_Position = MVPmatrix * (5 * a_position);
 	}
-	else*/
-
-	
-		gl_Position = MVPmatrix*a_position;
+	else
+	*/
+	gl_Position = MVPmatrix*a_position;
 }

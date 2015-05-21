@@ -67,9 +67,13 @@ struct Globals {
 	int gamma_swtich;
 	int invert_switch;
 	int ortho_switch;
+	int cel_switch;
+	int border_switch;
 
+	float specular_power;
 	float cam_near;
 	float cam_far;
+	float border_size;
 
 	float zoomFactor; /* Global, if you want. Modified by user input. Initially 1.0 */
 
@@ -79,19 +83,23 @@ struct Globals {
         height = 600;
 		ambient_switch = 1;
 		diffuse_switch = 1;
-		specular_switch = 1;
+		specular_switch = 0;
 		gamma_swtich = 1;
 		normals_switch = 0;
 		invert_switch = 0;
 		ortho_switch = 0;
+		cel_switch = 1;
+		border_switch = 1;
 		zoomFactor = 1.0f;
 		light_position = glm::vec3(0.0f, 5.0f, -5.0f);
-		light_color = glm::vec3(1.0f, 1.0f, 1.0f);
-		ambient_color = glm::vec3(0.0f, 10.0f, 0.0f);
+		light_color = glm::vec3(0.69f, 0.69f, 0.69f);
+		ambient_color = glm::vec3(0.01f, 0.01f, 0.01f);
 		diffuse_color = glm::vec3(0.0f, 1.0f, 0.0f);
-		specular_color = glm::vec3(1.0f, 1.0f, 1.0f);
+		specular_color = glm::vec3(0.69f, 0.69f, 0.69f);
 		bg_color = glm::vec3(255.0, 0.0, 0.0);
-		intensity_bounds = glm::vec3(0.95, 0.75, 0.5);
+		intensity_bounds = glm::vec3(0.88, 0.37, 0.13);
+		specular_power = 50.0;
+		border_size = 8;
     }
 
 };
@@ -218,11 +226,10 @@ void init(void)
     initializeTrackball();
 }
 
-// MODIFY THIS FUNCTION
-void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
+void drawBorder(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 {
     program.enable();
-    
+
     // Define the model, view, and projection matrices here
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = glm::mat4(1.0f);
@@ -262,7 +269,7 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	program.setUniform3f("ambient_color",globals.ambient_color);
 	program.setUniform3f("diffuse_color",globals.diffuse_color);
 	program.setUniform3f("specular_color",globals.specular_color);
-	program.setUniform1f("specular_power",40.0);
+	program.setUniform1f("specular_power",globals.specular_power);
 	program.setUniform3f("u_intensity_bounds", globals.intensity_bounds);
 
 	program.setUniform1i("ambient_switch",globals.ambient_switch);
@@ -271,6 +278,7 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	program.setUniform1i("gamma_swtich",globals.gamma_swtich);
 	program.setUniform1i("invert_switch",globals.invert_switch);
 	program.setUniform1i("normals_switch",globals.normals_switch);
+	program.setUniform1i("u_cel_switch", globals.cel_switch);
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -280,6 +288,108 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+
+	/* Draw second object, all black, slight larger in direction of normals
+	globals.program_outline.enable()
+	glBindVertexArray(meshVAO.vao);
+	glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	globals.program_outline.disable()
+	*/
+
+	glClearColor(globals.bg_color[0],globals.bg_color[1],globals.bg_color[2], 1.0);
+
+    program.disable();
+}
+
+
+// MODIFY THIS FUNCTION
+void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
+{
+    program.enable();
+
+    // Define the model, view, and projection matrices here
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+
+    // Construct the ModelViewProjection, ModelView, and normal
+    // matrices here and pass them as uniform variables to the shader
+    // program
+	view = glm::lookAt(glm::vec3(0.0f,0.01f,5.0f),glm::vec3(0),glm::vec3(0.0f,1.0f,0.0f));
+
+	if(!globals.ortho_switch) {
+		projection = glm::perspective(globals.zoomFactor*45.0f, 1.0f, 0.1f, 100.0f);
+	}
+	else {
+		projection = glm::ortho(globals.zoomFactor*-5.0, globals.zoomFactor*5.0, globals.zoomFactor*-5.0, globals.zoomFactor*5.0, 0.1, 100.0); 
+	}
+
+	glm::mat4 trackMatrix = globals.trackball.getRotationMatrix();
+
+	model = trackMatrix;
+
+	glm::mat4 MVPmatrix = projection * view * model;
+	glm::mat4 u_mv = view * model;
+	globals.program.setUniformMatrix4f("MVPmatrix", glm::mat4(MVPmatrix));
+	globals.program.setUniformMatrix4f("u_mv", u_mv);
+    
+
+    // Set up the light source and material properties and pass them
+    // as uniform variables to the shader program, along with the
+    // flags (uniform int variables) used for toggling on/off
+    // different parts of the rendering
+	
+	
+
+	program.setUniform3f("light_position",globals.light_position);
+	program.setUniform3f("light_color",globals.light_color);
+	program.setUniform3f("ambient_color",globals.ambient_color);
+	program.setUniform3f("diffuse_color",globals.diffuse_color);
+	program.setUniform3f("specular_color",globals.specular_color);
+	program.setUniform1f("specular_power",globals.specular_power);
+	program.setUniform3f("u_intensity_bounds", globals.intensity_bounds);
+	
+
+
+	program.setUniform1i("ambient_switch",globals.ambient_switch);
+	program.setUniform1i("diffuse_switch",globals.diffuse_switch);
+	program.setUniform1i("specular_switch",globals.specular_switch);
+	program.setUniform1i("gamma_swtich",globals.gamma_swtich);
+	program.setUniform1i("invert_switch",globals.invert_switch);
+	program.setUniform1i("normals_switch",globals.normals_switch);
+	program.setUniform1i("u_cel_switch", globals.cel_switch);
+
+	/////////////// Draw Border ///////////////////////////////////////////////////////////////
+	if (globals.border_switch == 1)
+	{
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glLineWidth(globals.border_size);
+
+		glDepthMask(GL_FALSE);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		program.setUniform1i("border_switch", globals.border_switch);
+
+		glBindVertexArray(meshVAO.vao);
+		glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glDisable(GL_CULL_FACE);
+		glDepthMask(GL_TRUE);
+
+		//glCullFace(GL_BACK);
+	}
+	///////////////////////////////////////////////////////////////////////////////////////////
+
+	program.setUniform1i("border_switch", 0);
+    glBindVertexArray(meshVAO.vao);
+    glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+
+	
 
 	/* Draw second object, all black, slight larger in direction of normals
 	globals.program_outline.enable()
@@ -434,6 +544,8 @@ void reshape(int width, int height)
 
 int main(int argc, char** argv)
 {
+	
+	
     glutInit(&argc, argv);
     glutInitContextVersion(3, 2);
     glutInitContextProfile(GLUT_CORE_PROFILE);
@@ -458,15 +570,15 @@ int main(int argc, char** argv)
 	TwAddVarRW(myBar, "DiffuseColor_switch", TW_TYPE_BOOL32, &globals.diffuse_switch,"label= 'Diffuse on/off' group='diffuse'");
 	TwAddVarRW(myBar, "SpecularColor", TW_TYPE_COLOR3F, &globals.specular_color[0], "colormode=rgb group='specular'");
 	TwAddVarRW(myBar, "SpecularColor_switch", TW_TYPE_BOOL32, &globals.specular_switch,"label= 'Specular on/off' group='specular'");
+	TwAddVarRW(myBar, "SpecularPower", TW_TYPE_FLOAT, &globals.specular_power, "group='specular'");
 	TwAddVarRW(myBar, "LightColor", TW_TYPE_COLOR3F, &globals.light_color[0], "colormode=rgb group='light'");
-	TwAddVarRW(myBar, "Pos x", TW_TYPE_FLOAT, &globals.light_position[0], "group='light'");
-	TwAddVarRW(myBar, "Pos y", TW_TYPE_FLOAT, &globals.light_position[1], "group='light'");
-	TwAddVarRW(myBar, "Pos z", TW_TYPE_FLOAT, &globals.light_position[2], "group='light'");
-	TwAddVarRW(myBar, "BgColor", TW_TYPE_COLOR3F, &globals.bg_color, "colormode=rgb");
+	TwAddVarRW(myBar, "Light poss", TW_TYPE_DIR3F, &globals.light_position, "group='light'");
 	TwAddVarRW(myBar, "GammaCorrection_switch", TW_TYPE_BOOL32, &globals.gamma_swtich,"label= 'Gamma on/off'");
 	TwAddVarRW(myBar, "InvertNormals_switch", TW_TYPE_BOOL32, &globals.invert_switch,"label= 'Invert on/off'");
 	TwAddVarRW(myBar, "Ortho toggle", TW_TYPE_BOOL32, &globals.ortho_switch,"");
 	TwAddVarRW(myBar, "Intesity Bounds", TW_TYPE_DIR3F, &globals.intensity_bounds, "group='Cel Shading'");
+	TwAddVarRW(myBar, "Cel_Shading", TW_TYPE_BOOL32, &globals.cel_switch, "group='Cel Shading'");
+	TwAddVarRW(myBar, "Border size", TW_TYPE_FLOAT, &globals.border_size, "group='Cel Shading'");
     glutDisplayFunc(&display);
     glutIdleFunc(&idle);
     glutKeyboardFunc(&keyboard);
