@@ -212,7 +212,7 @@ void init(void)
                 shaderDir() + "mesh.frag",
                 &globals.program);
 
-    loadMesh((modelDir() + "gargo.obj"), &globals.mesh);
+    loadMesh((modelDir() + "teapot.obj"), &globals.mesh);
     createMeshVAO(globals.mesh, &globals.meshVAO);
 
     initializeTrackball();
@@ -459,9 +459,7 @@ int main(int argc, char** argv)
 	TwAddVarRW(myBar, "SpecularColor", TW_TYPE_COLOR3F, &globals.specular_color[0], "colormode=rgb group='specular'");
 	TwAddVarRW(myBar, "SpecularColor_switch", TW_TYPE_BOOL32, &globals.specular_switch,"label= 'Specular on/off' group='specular'");
 	TwAddVarRW(myBar, "LightColor", TW_TYPE_COLOR3F, &globals.light_color[0], "colormode=rgb group='light'");
-	TwAddVarRW(myBar, "Pos x", TW_TYPE_FLOAT, &globals.light_position[0], "group='light'");
-	TwAddVarRW(myBar, "Pos y", TW_TYPE_FLOAT, &globals.light_position[1], "group='light'");
-	TwAddVarRW(myBar, "Pos z", TW_TYPE_FLOAT, &globals.light_position[2], "group='light'");
+	TwAddVarRW(myBar, "Light position", TW_TYPE_DIR3F, &globals.light_position, "group='light'");
 	TwAddVarRW(myBar, "BgColor", TW_TYPE_COLOR3F, &globals.bg_color, "colormode=rgb");
 	TwAddVarRW(myBar, "GammaCorrection_switch", TW_TYPE_BOOL32, &globals.gamma_swtich,"label= 'Gamma on/off'");
 	TwAddVarRW(myBar, "InvertNormals_switch", TW_TYPE_BOOL32, &globals.invert_switch,"label= 'Invert on/off'");

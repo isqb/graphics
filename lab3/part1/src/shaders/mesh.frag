@@ -13,7 +13,7 @@ uniform int specular_switch;
 uniform int gamma_swtich;
 uniform int invert_switch;
 uniform int normals_switch;
-//uniform vec3 u_intensity_bounds;
+uniform vec3 u_intensity_bounds;
 
 in vec3 L;
 in vec3 V;
@@ -54,11 +54,11 @@ void main() {
 	
 	//vec3 color = vec3(1.0,0.5,0.5);
 	vec3 color = output_color;
-	if (intensity > intensity_bounds.x)		// Upper Bound	
+	if (intensity > u_intensity_bounds.x)		// Upper Bound	
 		color = color;
-	else if (intensity > intesity_bounds.y)	// Middle Bound	
+	else if (intensity > u_intensity_bounds.y)	// Middle Bound	
 		color = 0.75 * color;
-	else if (intensity > intensity_bounds.z)	// Lower Bound
+	else if (intensity > u_intensity_bounds.z)	// Lower Bound
 		color = 0.5 * color;
 	else
 		color = 0.26 * color;
@@ -68,12 +68,10 @@ void main() {
 	if (border < 0){
 		color = vec3(0.0,0.0,0.0);
 	}
-
-	/*
-	if(border < 0.25){
 		
+	if(border < 0.25){
+		color = vec3(0.0,0.0,0.0);
 	}
-	*/
 	gl_FragColor = vec4(color, 1.0);
     //FragColor = vec4(output_color, 1.0);
 
