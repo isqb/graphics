@@ -15,6 +15,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "lodepng.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -24,6 +25,13 @@
 enum AttributeLocation {
     POSITION = 0,
     NORMAL = 1
+};
+
+// Struct for representing an 8-bit bitmap image
+struct Image_t {
+	int width;
+	int height;
+	std::vector<unsigned char> data;
 };
 
 // Struct for representing an indexed triangle mesh
@@ -60,6 +68,16 @@ struct Globals {
 	glm::vec3 bg_color;
 	glm::vec3 intensity_bounds;
 
+	std::vector<std::string> textures;
+	GLuint cubemap_0;
+	GLuint cubemap_1;
+	GLuint cubemap_2;
+	GLuint cubemap_3;
+	GLuint cubemap_4;
+	GLuint cubemap_5;
+	GLuint cubemap_6;
+	GLuint cubemap_7;
+
 	int ambient_switch;
 	int diffuse_switch;
 	int specular_switch;
@@ -69,6 +87,7 @@ struct Globals {
 	int ortho_switch;
 	int cel_switch;
 	int border_switch;
+	int front_switch;
 
 	float specular_power;
 	float cam_near;
@@ -84,16 +103,17 @@ struct Globals {
 		ambient_switch = 1;
 		diffuse_switch = 1;
 		specular_switch = 0;
-		gamma_swtich = 1;
+		//gamma_swtich = 1;
 		normals_switch = 0;
 		invert_switch = 0;
 		ortho_switch = 0;
 		cel_switch = 1;
 		border_switch = 1;
+		front_switch = 1;
 		zoomFactor = 1.0f;
-		light_position = glm::vec3(0.0f, 5.0f, -5.0f);
-		light_color = glm::vec3(0.69f, 0.69f, 0.69f);
-		ambient_color = glm::vec3(0.01f, 0.01f, 0.01f);
+		light_position = glm::vec3(4.9f, 4.72f, 1.9f);
+		light_color = glm::vec3(0.78f, 0.78f, 0.78f);
+		ambient_color = glm::vec3(0.22f, 0.22f, 0.22f);
 		diffuse_color = glm::vec3(0.0f, 1.0f, 0.0f);
 		specular_color = glm::vec3(0.69f, 0.69f, 0.69f);
 		bg_color = glm::vec3(255.0, 0.0, 0.0);
@@ -130,6 +150,16 @@ std::string shaderDir(void)
     return rootDir + "/part1/src/shaders/";
 }
 
+std::string cubemapDir(void)
+{
+	std::string rootDir = getEnvVar("ASSIGNMENT3_ROOT");
+	if (rootDir.empty()) {
+		std::cout << "Error: ASSIGNMENT3_ROOT is not set." << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+	return rootDir + "/cubemaps/";
+}
+
 // Returns the absolute path to the 3D model directory
 std::string modelDir(void)
 {
@@ -139,6 +169,94 @@ std::string modelDir(void)
         std::exit(EXIT_FAILURE);
     }
     return rootDir + "/3d_models/";
+}
+
+
+Image_t loadPNG(const std::string &filename)
+{
+	std::cout << "Loading image from " << filename << " ..." << std::endl;
+
+	std::vector<unsigned char> data;
+	unsigned width, height;
+	unsigned error = lodepng::decode(data, width, height, filename);
+	if (error != 0) {
+		std::cout << "Error: " << lodepng_error_text(error) << std::endl;
+		std::exit(EXIT_FAILURE);
+	}
+
+	Image_t image;
+	image.width = width;
+	image.height = height;
+	image.data = data;
+
+	std::cout << "Done!" << std::endl;
+	std::cout << "Image width: " << image.width << std::endl;
+	std::cout << "Image height: " << image.height << std::endl;
+	std::cout << "Number of elements: " << image.data.size() << std::endl;
+
+	return image;
+}
+
+
+GLuint loadCubeMap(const std::string &dirname)
+{
+	GLuint cubemap;
+	glGenTextures(1, &cubemap);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap);
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	Image_t image_x_positive = loadPNG(std::string(dirname + "/posx.png"));
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0,                  // target, level of detail
+		GL_RGBA8,                                           // internal format
+		image_x_positive.width, image_x_positive.height, 0, // width, height, border
+		GL_RGBA, GL_UNSIGNED_BYTE,                          // external format, type
+		&(image_x_positive.data[0]));                       // pixels
+
+	Image_t image_x_negative = loadPNG(std::string(dirname + "/negx.png"));
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0,                  // target, level of detail
+		GL_RGBA8,                                           // internal format
+		image_x_negative.width, image_x_negative.height, 0, // width, height, border
+		GL_RGBA, GL_UNSIGNED_BYTE,                          // external format, type
+		&(image_x_negative.data[0]));                       // pixels
+
+	Image_t image_y_positive = loadPNG(std::string(dirname + "/posy.png"));
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0,                  // target, level of detail
+		GL_RGBA8,                                           // internal format
+		image_y_positive.width, image_y_positive.height, 0, // width, height, border
+		GL_RGBA, GL_UNSIGNED_BYTE,                          // external format, type
+		&(image_y_positive.data[0]));                       // pixels
+
+	Image_t image_y_negative = loadPNG(std::string(dirname + "/negy.png"));
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0,                  // target, level of detail
+		GL_RGBA8,                                           // internal format
+		image_y_negative.width, image_y_negative.height, 0, // width, height, border
+		GL_RGBA, GL_UNSIGNED_BYTE,                          // external format, type
+		&(image_y_negative.data[0]));                       // pixels
+
+	Image_t image_z_positive = loadPNG(std::string(dirname + "/posz.png"));
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0,                  // target, level of detail
+		GL_RGBA8,                                           // internal format
+		image_z_positive.width, image_z_positive.height, 0, // width, height, border
+		GL_RGBA, GL_UNSIGNED_BYTE,                          // external format, type
+		&(image_z_positive.data[0]));                       // pixels
+
+	Image_t image_z_negative = loadPNG(std::string(dirname + "/negz.png"));
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0,                  // target, level of detail
+		GL_RGBA8,                                           // internal format
+		image_z_negative.width, image_z_negative.height, 0, // width, height, border
+		GL_RGBA, GL_UNSIGNED_BYTE,                          // external format, type
+		&(image_z_negative.data[0]));                       // pixels
+
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+	return cubemap;
 }
 
 void loadProgram(const std::string &vertexShaderFilename,
@@ -215,6 +333,18 @@ void initializeTrackball(void)
 void init(void)
 {
 	glClearColor(globals.bg_color[0],globals.bg_color[1],globals.bg_color[2], 1.0);
+
+	std::string texture_array[] = { "0.125", "0.5", "2", "8", "32", "128", "512", "2048" };
+	globals.textures = std::vector<std::string>(texture_array, end(texture_array));
+	globals.cubemap_0 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[0]);
+	globals.cubemap_1 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[1]);
+	globals.cubemap_2 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[2]);
+	globals.cubemap_3 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[3]);
+	globals.cubemap_4 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[4]);
+	globals.cubemap_5 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[5]);
+	globals.cubemap_6 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[6]);
+	globals.cubemap_7 = loadCubeMap(cubemapDir() + "RomeChurch/prefiltered/" + globals.textures[7]);
+	std::string dir = shaderDir();
 
     loadProgram(shaderDir() + "mesh.vert",
                 shaderDir() + "mesh.frag",
@@ -308,6 +438,10 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 {
     program.enable();
 
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, globals.cubemap_7);
+	globals.program.setUniform1i("u_cubemap", 2);	
+
     // Define the model, view, and projection matrices here
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = glm::mat4(1.0f);
@@ -326,8 +460,12 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	}
 
 	glm::mat4 trackMatrix = globals.trackball.getRotationMatrix();
-
 	model = trackMatrix;
+
+	// Rotate
+	double elapsed_time = double(glutGet(GLUT_ELAPSED_TIME)) / 1000.0;
+	glm::vec3 axis = glm::vec3(0.0f, 1.0f, 0.0f);
+	model = glm::rotate(model, (float)elapsed_time*45.0f, axis);
 
 	glm::mat4 MVPmatrix = projection * view * model;
 	glm::mat4 u_mv = view * model;
@@ -383,10 +521,13 @@ void drawMesh(cgtk::GLSLProgram &program, const MeshVAO &meshVAO)
 	}
 	///////////////////////////////////////////////////////////////////////////////////////////
 
-	program.setUniform1i("border_switch", 0);
-    glBindVertexArray(meshVAO.vao);
-    glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
+	if (globals.front_switch == 1)
+	{
+		program.setUniform1i("border_switch", 0);
+		glBindVertexArray(meshVAO.vao);
+		glDrawElements(GL_TRIANGLES, meshVAO.numIndices, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
 
 
 	
@@ -564,6 +705,12 @@ int main(int argc, char** argv)
 	TwInit(TW_OPENGL_CORE, NULL);
 	TwBar *myBar;
 	myBar = TwNewBar("AwesomeTweak2k");
+	TwAddVarRW(myBar, "Intesity Bounds", TW_TYPE_DIR3F, &globals.intensity_bounds, "group='Cel Shading'");
+	TwAddVarRW(myBar, "Cel_Shading", TW_TYPE_BOOL32, &globals.cel_switch, "group='Cel Shading'");
+	TwAddVarRW(myBar, "Show Front Face", TW_TYPE_BOOL32, &globals.front_switch, "group='Cel Shading'");
+	TwAddVarRW(myBar, "Show Back Frame", TW_TYPE_BOOL32, &globals.border_switch, "group='Cel Shading'");
+	TwAddVarRW(myBar, "Border size", TW_TYPE_FLOAT, &globals.border_size, "group='Cel Shading'");
+
 	TwAddVarRW(myBar, "AmbientColor", TW_TYPE_COLOR3F, &globals.ambient_color[0], "colormode=hls group='ambient'");
 	TwAddVarRW(myBar, "AmbientColor_switch", TW_TYPE_BOOL32, &globals.ambient_switch, "label= 'Ambient on/off' group='ambient'");
 	TwAddVarRW(myBar, "DiffuseColor", TW_TYPE_COLOR3F, &globals.diffuse_color[0], "colormode=rgb group='diffuse'");
@@ -576,9 +723,6 @@ int main(int argc, char** argv)
 	TwAddVarRW(myBar, "GammaCorrection_switch", TW_TYPE_BOOL32, &globals.gamma_swtich,"label= 'Gamma on/off'");
 	TwAddVarRW(myBar, "InvertNormals_switch", TW_TYPE_BOOL32, &globals.invert_switch,"label= 'Invert on/off'");
 	TwAddVarRW(myBar, "Ortho toggle", TW_TYPE_BOOL32, &globals.ortho_switch,"");
-	TwAddVarRW(myBar, "Intesity Bounds", TW_TYPE_DIR3F, &globals.intensity_bounds, "group='Cel Shading'");
-	TwAddVarRW(myBar, "Cel_Shading", TW_TYPE_BOOL32, &globals.cel_switch, "group='Cel Shading'");
-	TwAddVarRW(myBar, "Border size", TW_TYPE_FLOAT, &globals.border_size, "group='Cel Shading'");
     glutDisplayFunc(&display);
     glutIdleFunc(&idle);
     glutKeyboardFunc(&keyboard);

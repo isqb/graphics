@@ -22,10 +22,14 @@ out vec3 L;
 out vec3 N;
 out vec3 V;
 
+out vec3 TexCoords;
+
 void main() {
 	// Calculate the view-space normal, the view-space light vector,
     // and the view vector here and pass them as varying variables to
     // the fragment shader
+
+	TexCoords  = a_position.xyz;
 
 	//input_color = 0.5 * a_normal + 0.5; // maps the normal vector to an RGB color
 	//Transform the vertex position to view space (eye coordinates)

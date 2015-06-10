@@ -16,21 +16,24 @@ uniform int normals_switch;
 uniform int u_cel_switch;
 uniform int border_switch;
 uniform vec3 u_intensity_bounds;
+uniform samplerCube u_cubemap;
 
 in vec3 L;
 in vec3 V;
 in vec3 N;
+in vec3 TexCoords;
 
 out vec4 FragColor;
 
 void main() {
     // Implement the normalized Blinn-Phong shading model here
+	vec3 R = reflect(-V, N);
 
 	vec3 H = normalize(L+V);
 	vec3 Ia = ambient_color;
 	vec3 Id = diffuse_color*light_color*max(dot(N,L),0);
 	vec3 Is = ((specular_power+8)/8)*(specular_color*light_color)*pow(max(dot(N,H),0.0),(specular_power));
-	float intensity = dot(L,N);
+	//float intensity = dot(L,N);
 
 	vec3 output_color;
 	
@@ -57,6 +60,9 @@ void main() {
 			output_color = pow(output_color, vec3(1 / 2.2));
 		}
 
+		//output_color = texture(u_cubemap, R).rgb;
+		float intensity = (output_color.x + output_color.y + output_color.z)/3;
+
 		//vec3 output_color = vec3(0.0,1.0,0.0);
 	
 		//vec3 output_color = vec3(1.0,0.5,0.5);
@@ -80,7 +86,6 @@ void main() {
 		}
 	}
 	
-
 	gl_FragColor = vec4(output_color, 1.0);
     //FragColor = vec4(output_color, 1.0);
 
